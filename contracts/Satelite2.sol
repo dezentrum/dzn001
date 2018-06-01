@@ -15,13 +15,13 @@ contract Satelite2 is Ownable {
     Proposal[] proposals;
 
     uint256 claimTime;
-    uint256 nounce;
+    uint256 claimNonce;
     address claimer;
     Proposal claimedProposal;
 
     struct Proposal {
-        uint256 lat;
-        uint256 lon;
+        int256 lat;
+        int256 lon;
         uint256 balance;
         bool finished;
     }
@@ -45,8 +45,8 @@ contract Satelite2 is Ownable {
         claimTime = 0;
     }
 
-    function getNounce() view public returns (uint256) {
-        return nounce;
+    function getClaimNonce() view public returns (uint256) {
+        return claimNonce;
     }
 
     function getNumberofProposals() view public returns (uint256) {
@@ -60,19 +60,22 @@ contract Satelite2 is Ownable {
     function claim(uint256 _i, uint256 _nonce) isNotClaimed public returns (bool) {
         require(msg.sender != 0x0);
         claimer = msg.sender;
-        nounce = _nounce;
+        claimTime = block.timestamp;
+        claimNonce = _nonce;
         claimedProposal = proposals[_i];
         return true;
     }
 
-    function payout() onlyOwner isClaimed public returns (bool) {
+    // function confirmClaim(uint256 actualNonce) onlySatellite returns (bool) {}
+
+    function payout() onlyOwner isClaimed public returns (bool) { // Why onlyOwner? ~onlyClaimer?
         uint256 total = claimedProposal.balance;
-        uint256 satelite = total.multiply(satelitePart).divide(100);
-        uint256 dezentrum = total.multiply(dezentrumPart).divide(100);
+        uint256 sateliteAmount = total.multiply(satelitePart).divide(100);
+        uint256 dezentrumAmount = total.multiply(dezentrumPart).divide(100);
         uint256 claimer = total.sub(satelite).sub(dezentrum);
         msg.sender.transfer(claimer);
         dezentrumW.transfer(dezentrum);
-        owner.transfer(satelite);
+        owner.transfer(satelite); /* Do we need to do this? Can we leave it on an internal balance? Or send it to the satellite contract? */
         claimedProposal.finished = true;
         claimedProposal.balance = 0;
         return true;
@@ -80,6 +83,7 @@ contract Satelite2 is Ownable {
 
     function addProposal (int256 _lat, int256 _lon) public returns (uint256)
     {
+        // Check _lat _lon for actual coordinates (-180 to 180, -90 to 90 => int256?)
         var newProposal = new Proposal();
         newProposal.lat = _lat;
         newProposal.lon = _lon;
