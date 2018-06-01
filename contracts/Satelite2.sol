@@ -72,7 +72,7 @@ contract Satelite2 is Ownable {
         uint256 claimer = total.sub(satelite).sub(dezentrum);
         msg.sender.transfer(claimer);
         dezentrumW.transfer(dezentrum);
-        sateliteW.transfer(satelite);
+        owner.transfer(satelite);
         claimedProposal.finished = true;
         claimedProposal.balance = 0;
         return true;
@@ -87,8 +87,8 @@ contract Satelite2 is Ownable {
     }
 
     function fundProposal(i) payable  {
-        proposals[i] = proposals[i].add(msg.value);
-        payed(i,msg.sender,msg.value);
+        proposals[i].balance = proposals[i].balance.add(msg.value);
+        emit payed(i,msg.sender,msg.value);
     }
 
 }
